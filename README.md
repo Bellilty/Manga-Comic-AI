@@ -1,13 +1,16 @@
-# ComicAI
+# ComicAI - Manga & Comic Generator
 
-Transform your story ideas into beautiful AI-generated comics with consistent characters, coherent storylines, and professional comic styling.
+Transform your story ideas into beautiful AI-generated comics and mangas with consistent characters, coherent storylines, and professional styling powered by Ideogram and OpenAI.
 
 ## 🎯 Features
 
-- **AI Story Generation**: Automatically structure your pitch into a 3-5 page comic script
-- **Multiple Art Styles**: Choose between Comic, Manga, or Ligne Claire styles
-- **Consistent Characters**: Maintain character consistency across all panels
-- **Panel Assembly**: Automatically compose panels into professional comic pages
+- **AI Story Generation**: Automatically structure your pitch into a 2-4 page comic/manga script with detailed panel layouts
+- **Multiple Art Styles**: Choose between Comic (left-to-right) or Manga (right-to-left) styles
+- **Consistent Characters**: Maintain character consistency across all pages using Ideogram Character Reference
+- **Dynamic Panel Layouts**: Each page has unique, creative panel arrangements (not just grids)
+- **Precise Panel Positioning**: AI defines exact position, size, and content for each panel
+- **Visual Continuity**: Previous pages are sent as reference to maintain style consistency
+- **Readable Text**: English dialogue directly generated in speech bubbles
 - **PDF Export**: Download your comics as A4 PDFs
 - **Public Gallery**: Browse all generated comics in the Explore section
 
@@ -23,14 +26,15 @@ Transform your story ideas into beautiful AI-generated comics with consistent ch
 
 ### Backend
 - Next.js API Routes
-- Hugging Face Inference API (FREE tier)
+- Ideogram API (for image generation)
+- OpenAI API (for text generation)
 - Sharp for image processing
 - PDFKit for PDF generation
 
 ### AI Models
-- **Text Generation**: Qwen/Qwen2-7B-Instruct
-- **Image Generation**: stabilityai/stable-diffusion-xl-base-1.0
-- **Character Consistency**: h94/IP-Adapter
+- **Text Generation**: OpenAI GPT-4o-mini
+- **Image Generation**: Ideogram 3.0 Default with Character Reference
+- **Character Consistency**: Ideogram Character Reference feature
 
 ### Storage
 - File-based JSON storage system
@@ -40,7 +44,8 @@ Transform your story ideas into beautiful AI-generated comics with consistent ch
 ## 📋 Prerequisites
 
 - Node.js 18+ and npm/yarn
-- Hugging Face account and API token
+- OpenAI API key ([Get one here](https://platform.openai.com/api-keys))
+- Ideogram API key ([Get one here](https://ideogram.ai/) - see [IDEOGRAM_API_GUIDE.md](./IDEOGRAM_API_GUIDE.md))
 - macOS, Linux, or Windows with WSL2
 
 ## 🚀 Installation
@@ -48,7 +53,8 @@ Transform your story ideas into beautiful AI-generated comics with consistent ch
 ### 1. Clone the Repository
 
 ```bash
-cd comic-ai
+git clone https://github.com/Bellilty/Manga-Comic-AI.git
+cd Manga-Comic-AI
 ```
 
 ### 2. Install Dependencies
@@ -62,14 +68,28 @@ npm install
 Create a `.env.local` file in the root directory:
 
 ```bash
-HF_TOKEN=your_huggingface_token_here
+# OpenAI API Key (for GPT-4o-mini text generation)
+OPENAI_API_KEY=sk-your_openai_api_key_here
+
+# Ideogram API Key (for image generation)
+IDEOGRAM_API_KEY=ideogram_your_api_key_here
 ```
 
-To get your Hugging Face token:
-1. Sign up at [https://huggingface.co](https://huggingface.co)
-2. Go to Settings → Access Tokens
-3. Create a new token with "Read" permissions
+**Getting your API keys:**
+
+#### OpenAI API Key
+1. Sign up at [https://platform.openai.com](https://platform.openai.com)
+2. Go to API keys section
+3. Create a new secret key
 4. Copy and paste it into your `.env.local` file
+
+#### Ideogram API Key
+1. Sign up at [https://ideogram.ai](https://ideogram.ai)
+2. Click menu (☰) → "API (Beta)"
+3. Configure payment
+4. Create API key
+5. ⚠️ **Copy immediately** (shown only once)
+6. See [IDEOGRAM_API_GUIDE.md](./IDEOGRAM_API_GUIDE.md) for detailed instructions
 
 ### 4. Create Data Directory
 
@@ -93,10 +113,10 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 /comic-ai
   /app
     /api
-      /story/route.ts           # Generate story structure
+      /story/route.ts           # Generate story structure (OpenAI)
       /character/route.ts       # Generate character references
       /panel/route.ts           # Generate individual panels
-      /comic/route.ts           # Assemble full comic
+      /comic/route.ts           # Assemble full comic (Ideogram)
       /pdf/route.ts             # Generate PDF export
       /comics
         /list/route.ts          # List all comics
@@ -113,7 +133,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
     LoadingSpinner.tsx         # Loading indicator
     ComicCard.tsx              # Comic preview card
   /lib
-    hf.ts                      # Hugging Face API integration
+    hf.ts                      # Ideogram & OpenAI API integration
     prompts.ts                 # AI prompt templates
     layout.ts                  # Page layout logic
     types.ts                   # TypeScript types
@@ -124,29 +144,41 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🎨 How It Works
 
-### 1. Story Generation
+### 1. Story Generation (OpenAI GPT-4o-mini)
 
 User provides:
 - Story pitch (text description)
-- Visual style (comic/manga/ligne claire)
-- Optional character reference image
+- Visual style (comic or manga)
+- Optional character reference image and name
 
 The AI generates a structured story with:
-- 3-5 pages
-- Character descriptions
-- Panel-by-panel breakdown with descriptions, emotions, and dialogue
+- **2-4 pages** (determined automatically based on complexity)
+- Character descriptions with visual details
+- **Panel-by-panel breakdown** with:
+  - Precise position (x, y, width, height as percentages)
+  - Detailed visual description
+  - Character list
+  - Background description
+  - Actions description
+  - Dialogue with speaker names
 
-### 2. Comic Creation
+### 2. Comic Creation (Ideogram 3.0)
 
 For each page:
-1. Generate panels using Stable Diffusion XL
-2. Apply style-specific prompts
-3. Maintain character consistency using IP-Adapter
-4. Assemble panels into a vertical page layout
+1. **Page 1**: 
+   - Text-to-image with Ideogram 3.0 Default
+   - Character Reference image if provided
+   - Full page with multiple panels in one image
+
+2. **Page 2+**:
+   - Image-to-image with previous page(s) as reference
+   - Character Reference for consistency
+   - Style strength: 0.7 (strong consistency)
+   - Context from all previous pages in prompt
 
 ### 3. Output
 
-- PNG images for each page (1400×2000px)
+- PNG images for each page (portrait orientation)
 - Downloadable A4 PDF
 - Stored locally with metadata
 - Displayed in public Explore gallery
@@ -158,27 +190,11 @@ Generate story structure from pitch
 ```json
 {
   "pitch": "A brave knight discovers a magical sword",
-  "style": "comic"
-}
-```
-
-### POST `/api/character`
-Generate character reference image
-```json
-{
-  "characterDescription": "A young female knight with red hair",
-  "style": "manga"
-}
-```
-
-### POST `/api/panel`
-Generate single panel
-```json
-{
-  "description": "Knight holding glowing sword",
   "style": "comic",
-  "character": "young female knight",
-  "dialogue": "This sword... it's calling to me"
+  "characterReference": {
+    "name": "Knight",
+    "image": "data:image/png;base64,..."
+  }
 }
 ```
 
@@ -188,7 +204,8 @@ Generate full comic
 {
   "pitch": "Story description",
   "style": "manga",
-  "story": { /* StoryStructure object */ }
+  "story": { /* StoryStructure object */ },
+  "characterReferenceImage": "data:image/png;base64,..."
 }
 ```
 
@@ -206,13 +223,25 @@ List all generated comics
 ### GET `/api/comics/[id]`
 Get specific comic with all pages
 
+## 💰 Pricing
+
+### Cost per Comic (4 pages example)
+
+- **OpenAI GPT-4o-mini**: ~$0.01-0.02 (story generation)
+- **Ideogram 3.0 Default + Character Reference**: 4 × $0.15 = **$0.60**
+- **Total**: ~**$0.61-0.62** per comic
+
+See [IDEOGRAM_API_GUIDE.md](./IDEOGRAM_API_GUIDE.md) for detailed pricing.
+
 ## 🌐 Deployment
 
 ### Vercel (Recommended)
 
 1. Push your code to GitHub
 2. Import project in Vercel
-3. Add environment variable: `HF_TOKEN`
+3. Add environment variables:
+   - `OPENAI_API_KEY`
+   - `IDEOGRAM_API_KEY`
 4. Deploy
 
 **Note**: For production on Vercel, you'll need to:
@@ -239,27 +268,30 @@ CMD ["npm", "start"]
 Edit `lib/hf.ts` to modify:
 - Retry attempts
 - Timeout durations
-- Model loading wait times
+- Model selection (3.0-turbo, 3.0-default, 3.0-quality)
 
-Edit `lib/layout.ts` to modify:
-- Page dimensions
-- Panel spacing
-- Image resizing
+Edit `lib/prompts.ts` to modify:
+- Story structure requirements
+- Panel positioning rules
+- Style-specific instructions
 
 ### Change AI Models
 
 Update model names in API routes:
-- `app/api/story/route.ts` - Text model
-- `app/api/character/route.ts` - Image model
-- `app/api/panel/route.ts` - Image model
-- `app/api/comic/route.ts` - Image model
+- `app/api/story/route.ts` - OpenAI model (currently GPT-4o-mini)
+- `app/api/comic/route.ts` - Ideogram model (currently 3.0-default)
 
 ## 🐛 Troubleshooting
 
-### Model Loading Errors
-- Hugging Face models may need 20-30 seconds to "warm up"
-- The app automatically retries with exponential backoff
-- If persistent, try a different model or check HF status
+### API Key Errors
+- Ensure `.env.local` exists with both `OPENAI_API_KEY` and `IDEOGRAM_API_KEY`
+- Check that keys are valid and have sufficient credits
+- See [ENV_SETUP.md](./ENV_SETUP.md) for setup instructions
+
+### Ideogram API Errors
+- Check your Ideogram account balance
+- Verify API key is correct
+- See [IDEOGRAM_API_GUIDE.md](./IDEOGRAM_API_GUIDE.md) for troubleshooting
 
 ### Canvas/Sharp Issues
 ```bash
@@ -289,8 +321,18 @@ npm run build
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `HF_TOKEN` | Yes | Hugging Face API token |
+| `OPENAI_API_KEY` | Yes | OpenAI API token for text generation |
+| `IDEOGRAM_API_KEY` | Yes | Ideogram API token for image generation |
 | `NODE_ENV` | Auto | Development/production mode |
+
+See [ENV_SETUP.md](./ENV_SETUP.md) for detailed setup instructions.
+
+## 📚 Documentation
+
+- [IDEOGRAM_API_GUIDE.md](./IDEOGRAM_API_GUIDE.md) - Complete Ideogram API guide
+- [ENV_SETUP.md](./ENV_SETUP.md) - Environment variables setup
+- [MIGRATION_IDEOGRAM.md](./MIGRATION_IDEOGRAM.md) - Migration details
+- [QUICKSTART.md](./QUICKSTART.md) - Quick start guide
 
 ## 🤝 Contributing
 
@@ -307,7 +349,8 @@ MIT License - feel free to use this project for personal or commercial purposes.
 
 ## 🙏 Acknowledgments
 
-- Powered by [Hugging Face](https://huggingface.co) free inference API
+- Powered by [Ideogram](https://ideogram.ai) for high-quality image generation with readable text
+- Powered by [OpenAI](https://openai.com) for intelligent story generation
 - UI components from [shadcn/ui](https://ui.shadcn.com)
 - Built with [Next.js](https://nextjs.org)
 
@@ -315,10 +358,10 @@ MIT License - feel free to use this project for personal or commercial purposes.
 
 For issues and questions:
 1. Check the troubleshooting section
-2. Review Hugging Face model documentation
-3. Check Next.js 14 documentation
+2. Review [IDEOGRAM_API_GUIDE.md](./IDEOGRAM_API_GUIDE.md)
+3. Check [ENV_SETUP.md](./ENV_SETUP.md) for configuration
+4. Review OpenAI and Ideogram API documentation
 
 ---
 
 **Ready to create amazing comics? Start your dev server and let your imagination run wild!** 🎨✨
-
